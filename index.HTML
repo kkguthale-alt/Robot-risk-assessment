@@ -1,0 +1,523 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Robot Cell Risk Assessment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background:#f0f4f9; margin:0;}
+    .container { max-width: 1100px; margin: 26px auto 44px auto; background: #fff; border-radius: 12px; box-shadow: 0 0 16px #e3e3e3; padding:40px 36px 32px;}
+    h1 {text-align:center; color:#1374c3; font-size:2.3em; font-weight:800;}
+    .top-panel {display:flex; justify-content: space-between; align-items: flex-start; background: #f3f7ff; border:2px solid #b4d2fb; border-radius:10px; margin-bottom:27px; padding:22px 24px 16px 24px; gap:36px;}
+    .top-left {flex:1; min-width:280px; display:flex; flex-direction:column;}
+    .top-label { font-weight:800; color:#1374c3; margin-bottom:9px;}
+    .pcode-input, .hazardno-input {
+      width:100%; font-size:1.12em; padding:8px 10px; border-radius:7px; border:1.8px solid #bcd5f0; margin-bottom:12px;
+    }
+    .bottom-space { min-height:32px; }
+    .top-right { display: flex; flex-direction:column; align-items:flex-end; min-width:210px;}
+    .totalhazards-label { font-weight:800; color:#1374c3; margin-bottom:7px;}
+    .totalhazards-select {padding:7px 18px; font-size:1.08em; border-radius:8px; border:1.6px solid #b4d2fb;}
+    .hazard-block { background: #e6f5ff; border-radius: 9px; box-shadow: 0 1px 7px #c4e3f7; border:1.9px solid #a3c9e9; margin-bottom:32px; padding:19px 18px 18px 18px;}
+    .hazard-title-bar {background:#fffceb; font-weight:bold; color:#1374c3; font-size:1.18rem; border-left:5px solid #1374c3; padding:8px 18px; margin-bottom:14px;}
+    .hazard-panel {
+      background:#f3f7ff; border:2px solid #b4d2fb; border-radius:10px; margin-bottom:17px; padding:18px 18px 15px;
+    }
+    .hazard-header { color:#1374c3; font-size:1.26rem; font-weight:800; border-bottom:2px solid #8abbee; margin-bottom:12px; padding-bottom:7px;}
+    .details-label {font-weight:800; color:#1374c3; margin-right:6px;}
+    .details-row {margin-bottom:11px;}
+    .details-bold {font-weight:800; color:#135a90;}
+    .task-panel {background:#f3f7ff; border:2px solid #b4d2fb; border-radius:10px; margin-bottom:17px; padding:18px 18px 15px;}
+    .task-header { color:#1374c3; font-size:1.1rem; font-weight:800; margin-bottom:9px;}
+    .task-select {padding:7px 13px; border-radius:7px; border:1.5px solid #b4d2fb; font-size:1.01rem; font-weight:700;}
+    .panel, .risk-after-panel {background:#f3f7ff; border:2px solid #b4d2fb; border-radius:10px; margin-bottom:17px; padding:18px 18px 15px;}
+    .panel label {font-weight:800; color:#1374c3;}
+    .risk-result, .hrn-box { font-size:1.10em; font-weight:700; text-align:center; border-radius:8px; padding:10px; margin:13px 0 0;}
+    .risk-green, .hrn-green {background:#27ae60; color:#fff;}
+    .risk-yellow, .hrn-yellow {background:#f7e917; color:#222;}
+    .risk-orange, .hrn-orange {background:#e67e22; color:#fff;}
+    .risk-red, .hrn-red {background:#c0392b; color:#fff;}
+    .risk-after-panel {margin-top:7px;}
+    .risk-after-header { color:#1374c3; letter-spacing:1px;
+      font-size:1.21rem; font-weight:800; margin-bottom:11px; border-bottom:2px solid #2276c3; padding-bottom:5px;}
+    .risk-row {display:flex;gap:16px;}
+    .risk-row .col { flex:1; min-width:110px;}
+    .risk-row label {font-weight:800;color:#1374c3;display:block;margin-bottom:5px;}
+    .risk-row select {width:100%;padding:6px;font-size:0.98rem;border-radius:6px;border:1.2px solid #aabbee; background:#fff;}
+    .photo-grid {display:flex;gap:14px;}
+    .photo-col {flex:1;}
+    .photo-label {font-weight:700;color:#1374c3;}
+    .photo-preview {max-width:98%;max-height:90px;display:none;margin-bottom:5px;}
+    .pdf-btn {background:#1374c3;color:#fff;font-weight:bold;font-size:1.1em;border:none;border-radius:8px;padding:14px 48px;cursor:pointer;margin:32px auto 18px auto;display:block;}
+    .pdf-btn:disabled {background:#a3bee0;cursor:not-allowed;}
+    .norm-panel { background:#eef4fd;border:2px solid #b4d2fb; border-radius:10px; padding:18px 22px; margin:28px 0 0 0;}
+    .norm-header { color:#1374c3; font-size:1.23em; font-weight:800; letter-spacing:0.2px; border-bottom:2px solid #1374c3; margin-bottom:17px; padding-bottom:8px;}
+    .norm-row {display:flex;flex-wrap:wrap;gap:28px;margin-bottom:7px;}
+    .norm-col {flex:1 1 220px;min-width:160px;}
+    .norm-label { font-weight:700; color:#1374c3; margin-bottom:6px;display:block;}
+    .norm-input, .norm-select { width:100%; font-size:1.07em; padding:8px 9px; border-radius:7px; border:1.5px solid #a8c7e7; margin-bottom:10px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Robot Cell Risk Assessment</h1>
+  <div class="top-panel">
+    <div class="top-left">
+      <label class="top-label" for="project-code">Project code:</label>
+      <input type="text" id="project-code" class="pcode-input" placeholder="Enter project code..." />
+      <div class="bottom-space"></div>
+      <label class="top-label" for="hazard-no">Hazard no:</label>
+      <input type="text" id="hazard-no" class="hazardno-input" placeholder="Enter hazard number/description..." />
+    </div>
+    <div class="top-right">
+      <label class="totalhazards-label" for="total-hazards">Total no. of hazards:</label>
+      <select id="total-hazards" class="totalhazards-select"></select>
+    </div>
+  </div>
+  <div id="hazard-blocks"></div>
+  <button id="pdf-btn" class="pdf-btn">Download PDF</button>
+</div>
+<script>
+// Map from S, F, P to PLr (ISO 13849 risk graph, see your diagram)
+const PLR_MAP = {
+  // S1
+  S1: {
+    F1: {P1:'b',P2:'c'},
+    F2: {P1:'c',P2:'d'}
+  },
+  // S2
+  S2: {
+    F1: {P1:'c',P2:'d'},
+    F2: {P1:'d',P2:'e'}
+  }
+};
+// Init hazard panels
+for(let i=1;i<=15;i++){
+  let op=document.createElement('option');op.value=i;op.textContent=i;
+  if(i===1)op.selected=true;document.getElementById('total-hazards').appendChild(op);
+}
+const defaultHazard = {
+  type:'Hazardous events for non-existent/poorly designed SRP / CS',
+  consequence:'Stabbing/fatal',
+  task:'Production'
+};
+// --- New: Norm-panel for each block:
+const normPanelTemplate = idx => `
+<div class="norm-panel" id="norm-panel-${idx}">
+  <div class="norm-header">Normative Basics and PLr Determination</div>
+  <div class="norm-row">
+    <div class="norm-col">
+      <label class="norm-label" for="norm-desc-${idx}">Normative basics:</label>
+      <input id="norm-desc-${idx}" class="norm-input" placeholder="Enter description..." />
+    </div>
+    <div class="norm-col">
+      <label class="norm-label" for="sprcs-desc-${idx}">SRP/CS:</label>
+      <input id="sprcs-desc-${idx}" class="norm-input" placeholder="Enter SRP/CS description..."/>
+    </div>
+  </div>
+  <div class="norm-row">
+    <div class="norm-col">
+      <label class="norm-label" for="dropdown-s-${idx}">Severity of the injury (S):</label>
+      <select id="dropdown-s-${idx}" class="norm-select">
+        <option value="S1">S1: Slight (usually reversible injury)</option>
+        <option value="S2">S2: Serious (usually irreversible injury including death)</option>
+      </select>
+    </div>
+    <div class="norm-col">
+      <label class="norm-label" for="dropdown-f-${idx}">Frequency and/or duration of exposure to danger (F):</label>
+      <select id="dropdown-f-${idx}" class="norm-select">
+        <option value="F1">F1: Rare or short exposure time to danger</option>
+        <option value="F2">F2: Frequent to long exposure time</option>
+      </select>
+    </div>
+    <div class="norm-col">
+      <label class="norm-label" for="dropdown-p-${idx}">Possibility of preventing danger or limiting the damage (P):</label>
+      <select id="dropdown-p-${idx}" class="norm-select">
+        <option value="P1">P1: Possible under certain conditions</option>
+        <option value="P2">P2: Scarcely possible</option>
+      </select>
+    </div>
+    <div class="norm-col">
+      <label class="norm-label" for="dropdown-plr-${idx}">Required performance level PL (PLr):</label>
+      <select id="dropdown-plr-${idx}" class="norm-select">
+        <option>a</option>
+        <option>b</option>
+        <option>c</option>
+        <option>d</option>
+        <option>e</option>
+      </select>
+    </div>
+  </div>
+</div>
+`;
+// -- Main hazard panel code (unchanged)
+const hazardPanelTemplate = idx => `
+  <div class="hazard-block" data-idx="${idx}">
+    <label class="top-label" for="hazard-title-${idx}">Title of hazards:</label>
+    <input type="text" id="hazard-title-${idx}" class="pcode-input" placeholder="e.g., When system is in auto mode, chance of person entering from pallet loading unloading area">
+    <div class="hazard-title-bar" id="hazard-titlebar-${idx}" style="display:none"></div>
+    <div class="hazard-panel">
+      <div class="hazard-header">Hazard Details</div>
+      <div class="details-row">
+        <span class="details-label">Type of Hazard:</span>
+        <span id="type-${idx}" class="details-bold">${defaultHazard.type}</span>
+      </div>
+      <div class="details-row">
+        <span class="details-label">Consequences:</span>
+        <span id="consequence-${idx}" class="details-bold">${defaultHazard.consequence}</span>
+      </div>
+    </div>
+    <div class="task-panel">
+      <div class="task-header">Task:</div>
+      <select id="task-select-${idx}" class="task-select">
+        <option value="Production" selected>Production</option>
+        <option value="Maintenance">Maintenance</option>
+      </select>
+    </div>
+    <div class="panel">
+      <label>Risk Assessment of Current State</label>
+      <div class="risk-row" style="margin-top:7px;">
+        <div class="col"><label for="pe-${idx}">PE</label>
+          <select id="pe-${idx}">
+            <option value="0.033">Almost impossible (0.033)</option>
+            <option value="1">Highly unlikely (1)</option>
+            <option value="1.5">Unlikely (1.5)</option>
+            <option value="2">Possible (2)</option>
+            <option value="5">Even chance (5)</option>
+            <option value="8">Probable (8)</option>
+            <option value="10">Likely (10)</option>
+            <option value="15">Certain (15)</option>
+          </select>
+        </div>
+        <div class="col"><label for="fe-${idx}">FE</label>
+          <select id="fe-${idx}">
+            <option value="0.5">Annually (0.5)</option>
+            <option value="1">Monthly (1)</option>
+            <option value="1.5">Weekly (1.5)</option>
+            <option value="2.5">Daily (2.5)</option>
+            <option value="4">Hourly (4)</option>
+            <option value="5">Constantly (5)</option>
+          </select>
+        </div>
+        <div class="col"><label for="dph-${idx}">DPH</label>
+          <select id="dph-${idx}">
+            <option value="0.1">Scratch or bruise (0.1)</option>
+            <option value="0.5">Laceration or mild ill-effect (0.5)</option>
+            <option value="2">Break of minor bone or minor illness (2)</option>
+            <option value="4">Break of major bone or major illness (4)</option>
+            <option value="6">Loss of one limb, eye, hearing (6)</option>
+            <option value="10">Loss of two limbs or eyes (10)</option>
+            <option value="15">Fatality (15)</option>
+          </select>
+        </div>
+        <div class="col"><label for="np-${idx}">NP</label>
+          <select id="np-${idx}">
+            <option value="1">1-2 persons (1)</option>
+            <option value="2">3-7 persons (2)</option>
+            <option value="4">8-15 persons (4)</option>
+            <option value="8">16-50 persons (8)</option>
+            <option value="12">50+ persons (12)</option>
+          </select>
+        </div>
+      </div>
+      <div id="risk-result-${idx}" class="risk-result risk-green">HRN (Hazard Rating Number): 0.00 [Negligible]</div>
+    </div>
+    <div class="panel">
+      <label for="control-measures-${idx}">Control Measures Proposed</label>
+      <textarea id="control-measures-${idx}" rows="3" style="width:100%;" placeholder="Describe measures..."></textarea>
+      <div class="photo-grid">
+        <div class="photo-col">
+          <span class="photo-label">Before Photo:</span><br>
+          <img id="before-preview-${idx}" class="photo-preview"/>
+          <input type="file" id="before-photo-${idx}" accept="image/*">
+        </div>
+        <div class="photo-col">
+          <span class="photo-label">After Photo:</span><br>
+          <img id="after-preview-${idx}" class="photo-preview"/>
+          <input type="file" id="after-photo-${idx}" accept="image/*">
+        </div>
+      </div>
+    </div>
+    <div class="risk-after-panel">
+      <div class="risk-after-header">RISK ASSESSMENT AFTER CONTROLED MEASURE</div>
+      <div class="risk-row">
+        <div class="col">
+          <label for="pe-after-${idx}">Probability of Exposure<br>(PE)</label>
+          <select id="pe-after-${idx}">
+            <option value="0.033">Almost impossible (0.033)</option>
+            <option value="1">Highly unlikely (1)</option>
+            <option value="1.5">Unlikely (1.5)</option>
+            <option value="2">Possible (2)</option>
+            <option value="5">Even chance (5)</option>
+            <option value="8">Probable (8)</option>
+            <option value="10">Likely (10)</option>
+            <option value="15">Certain (15)</option>
+          </select>
+        </div>
+        <div class="col">
+          <label for="fe-after-${idx}">Frequency of Exposure<br>(FE)</label>
+          <select id="fe-after-${idx}">
+            <option value="0.5">Annually (0.5)</option>
+            <option value="1">Monthly (1)</option>
+            <option value="1.5">Weekly (1.5)</option>
+            <option value="2.5">Daily (2.5)</option>
+            <option value="4">Hourly (4)</option>
+            <option value="5">Constantly (5)</option>
+          </select>
+        </div>
+        <div class="col">
+          <label for="dph-after-${idx}">Degree of Possible Harm<br>(DPH)</label>
+          <select id="dph-after-${idx}">
+            <option value="0.1">Scratch or bruise (0.1)</option>
+            <option value="0.5">Laceration or mild ill-effect (0.5)</option>
+            <option value="2">Break of minor bone or minor illness (2)</option>
+            <option value="4">Break of major bone or major illness (4)</option>
+            <option value="6">Loss of one limb, eye, hearing (6)</option>
+            <option value="10">Loss of two limbs or eyes (10)</option>
+            <option value="15">Fatality (15)</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <label for="np-after-${idx}" style="font-weight:800;color:#1374c3;">No. of Persons at Risk<br>(NP)</label>
+        <select id="np-after-${idx}" style="width:100%;padding:7px;font-size:1rem;border-radius:7px;border:1.2px solid #aabbee;">
+          <option value="1">1-2 persons (1)</option>
+          <option value="2">3-7 persons (2)</option>
+          <option value="4">8-15 persons (4)</option>
+          <option value="8">16-50 persons (8)</option>
+          <option value="12">50+ persons (12)</option>
+        </select>
+      </div>
+      <div id="hrn-after-${idx}" class="hrn-box hrn-orange" style="margin-top:18px;">HRN (Hazard Rating Number): 0.00</div>
+    </div>
+    ${normPanelTemplate(idx)}
+  </div>
+`;
+function renderHazardBlocks() {
+  let n=parseInt(document.getElementById('total-hazards').value)||1;
+  let blocks='';
+  for(let i=0;i<n;i++) blocks+=hazardPanelTemplate(i+1);
+  document.getElementById('hazard-blocks').innerHTML=blocks;
+  for(let i=0;i<n;i++) setupHazardBlock(i+1);
+}
+document.getElementById('total-hazards').addEventListener('change',renderHazardBlocks);
+renderHazardBlocks();
+
+function getHRNandRisk(hrn) {
+  if(hrn <= 5) return {label:"Negligible", color:"#27ae60"};
+  if(hrn <= 50) return {label:"Low", color:"#f7e917"};
+  if(hrn <= 500) return {label:"High", color:"#e67e22"};
+  return {label:"Unacceptable", color:"#c0392b"};
+}
+
+// --- Automated PLr calculation for each panel
+function updatePLr(idx) {
+  const s = document.getElementById(`dropdown-s-${idx}`).value;
+  const f = document.getElementById(`dropdown-f-${idx}`).value;
+  const p = document.getElementById(`dropdown-p-${idx}`).value;
+  const autoPLr = PLR_MAP[s][f][p];
+  const select = document.getElementById(`dropdown-plr-${idx}`);
+  // Only update to auto (don't force if user already picked something else)
+  if (select && select.value !== autoPLr) {
+    // Update to auto
+    select.value = autoPLr;
+  }
+}
+function setupNormativePLR(idx){
+  ["dropdown-s-","dropdown-f-","dropdown-p-"].forEach(prefix=>{
+    document.getElementById(prefix+idx).addEventListener('change',()=>updatePLr(idx));
+  });
+  // Set initial value
+  updatePLr(idx);
+}
+
+function setupHazardBlock(idx) {
+  // Title of Hazards input mirrors to block
+  const title=document.getElementById(`hazard-title-${idx}`);
+  const titlebar=document.getElementById(`hazard-titlebar-${idx}`);
+  title.addEventListener('input',()=>{
+    let val=title.value.trim();
+    if(val){ titlebar.textContent=val; titlebar.style.display=''; }
+    else{ titlebar.textContent=''; titlebar.style.display='none'; }
+  });
+  // HRN calculation (current state)
+  function updateRisk1() {
+    let pe=+document.getElementById(`pe-${idx}`).value,
+      fe=+document.getElementById(`fe-${idx}`).value,
+      dph=+document.getElementById(`dph-${idx}`).value,
+      np=+document.getElementById(`np-${idx}`).value,
+      hrn=pe*fe*dph*np,
+      box=document.getElementById(`risk-result-${idx}`),
+      info=getHRNandRisk(hrn);
+    box.className='risk-result';
+    box.style.background=info.color; box.style.color=(hrn<=50)?"#222":"#fff";
+    box.textContent=`HRN (Hazard Rating Number): ${hrn.toFixed(2)} [${info.label}]`;
+  }
+  ['pe','fe','dph','np'].forEach(x => {
+    document.getElementById(`${x}-${idx}`).addEventListener('change',updateRisk1);
+  });
+  updateRisk1();
+  // HRN calculation (after)
+  function updateHRNA() {
+    let pe=+document.getElementById(`pe-after-${idx}`).value,
+      fe=+document.getElementById(`fe-after-${idx}`).value,
+      dph=+document.getElementById(`dph-after-${idx}`).value,
+      np=+document.getElementById(`np-after-${idx}`).value,
+      hrn=pe*fe*dph*np,
+      box=document.getElementById(`hrn-after-${idx}`),
+      info=getHRNandRisk(hrn);
+    box.className='hrn-box';
+    box.style.background=info.color; box.style.color=(hrn<=50)?"#222":"#fff";
+    box.textContent=`HRN (Hazard Rating Number): ${hrn.toFixed(2)} [${info.label}]`;
+  }
+  ['pe-after','fe-after','dph-after','np-after'].forEach(x => {
+    document.getElementById(`${x}-${idx}`).addEventListener('change',updateHRNA);
+  });
+  updateHRNA();
+  // Photos preview
+  function previewPhoto(input, previewImg){
+    input.addEventListener('change',function(){
+      if(this.files&&this.files[0]){ previewImg.src=URL.createObjectURL(this.files[0]); previewImg.style.display='block'; }
+      else{ previewImg.src=''; previewImg.style.display='none'; }
+    });
+  }
+  previewPhoto(document.getElementById(`before-photo-${idx}`),document.getElementById(`before-preview-${idx}`));
+  previewPhoto(document.getElementById(`after-photo-${idx}`),document.getElementById(`after-preview-${idx}`));
+  // Normative panel auto-calc
+  setupNormativePLR(idx);
+}
+function addImageToPDF(doc, fileInput, x, y, w, h, label) {
+  return new Promise(resolve=>{
+    const file=fileInput&&fileInput.files&&fileInput.files[0];if(!file){resolve(y);return;}
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      doc.setFontSize(11);doc.setTextColor("#1374c3");doc.text(label,x,y);y+=5;
+      doc.addImage(ev.target.result,'JPEG',x,y,w,h);resolve(y+h+4);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+document.getElementById('pdf-btn').addEventListener('click',async function(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p","mm","a4");
+  let y=18;
+  doc.setFont("helvetica","bold");doc.setFontSize(18);doc.setTextColor('#1374c3');
+  doc.text('Robot Cell Risk Assessment', 15, y);
+  y += 8;
+  // Project Code/Hazard Number
+  doc.setFontSize(13);doc.setTextColor('#1374c3');
+  doc.text("Project code: ",15,y);
+  doc.setTextColor('#111'); doc.text(document.getElementById("project-code").value || "(not specified)", 48, y);
+  y+=7;
+  doc.setFontSize(13);doc.setTextColor('#1374c3');
+  doc.text("Hazard no:",15,y)
+  doc.setTextColor('#111');doc.text(document.getElementById("hazard-no").value || "(not specified)",48,y);
+  y+=9;
+  let totalHazards=+document.getElementById("total-hazards").value;
+  doc.setFontSize(13);doc.setTextColor("#1374c3");
+  doc.text("Total number of hazards:",15,y);
+  doc.setTextColor("#111");doc.text(String(totalHazards),68,y);
+  y+=8;
+  for(let i=1;i<=totalHazards;i++){
+    if(y>250){doc.addPage(); y=18;}
+    doc.setDrawColor('#1374c3');doc.setLineWidth(0.8);
+    doc.setFont("helvetica","bold");doc.setFontSize(14);doc.setTextColor('#1374c3');
+    let title=document.getElementById(`hazard-title-${i}`).value.trim();
+    doc.text(`Hazard ${i}:`, 15, y); y+=7;
+    doc.setFont("helvetica","normal");doc.setFontSize(13);doc.setTextColor('#212121');
+    if(title.length){
+      let tLines=doc.splitTextToSize(title,180); doc.text(tLines,21,y); y+=tLines.length*6;
+    } else { doc.text("(No hazard title provided)", 21, y); y+=6;}
+    // Details panel
+    doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor('#1374c3');
+    doc.text("Hazard Details",15,y); y+=6;
+    doc.setLineWidth(0.4);doc.setDrawColor('#8abbee');doc.line(15, y, 195, y); y+=3;
+    doc.setFontSize(12);
+    doc.text("Type of Hazard:",18,y); doc.setTextColor('#000');doc.text(document.getElementById(`type-${i}`).textContent,54,y); y+=6;
+    doc.setTextColor('#1374c3');
+    doc.text("Consequences:",18,y); doc.setTextColor('#000');doc.text(document.getElementById(`consequence-${i}`).textContent,54,y); y+=8;
+    // Task 
+    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor('#1374c3');
+    doc.text('Task:',18,y); doc.setFont("helvetica","normal"); doc.setTextColor('#000');
+    doc.text(document.getElementById(`task-select-${i}`).value,34,y); y+=8;
+    // Risk Assessment Current
+    doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor('#1374c3');
+    doc.text("Risk Assessment of Current State",15,y); y+=6;
+    function pdfRow(label,val){ doc.setFont("helvetica","bold");doc.setTextColor('#1374c3');doc.setFontSize(11);doc.text(label,18,y);doc.setFont("helvetica","normal");doc.setTextColor('#222');doc.text(val,64,y); y+=5.3;}
+    pdfRow('Probability of Exposure (PE):',document.getElementById(`pe-${i}`).selectedOptions[0].text);
+    pdfRow('Frequency of Exposure (FE):',document.getElementById(`fe-${i}`).selectedOptions[0].text);
+    pdfRow('Degree of Possible Harm (DPH):',document.getElementById(`dph-${i}`).selectedOptions[0].text);
+    pdfRow('No. of Persons at Risk (NP):',document.getElementById(`np-${i}`).selectedOptions[0].text);
+    let pe=+document.getElementById(`pe-${i}`).value,
+      fe=+document.getElementById(`fe-${i}`).value,
+      dph=+document.getElementById(`dph-${i}`).value,
+      np=+document.getElementById(`np-${i}`).value,
+      hrn=pe*fe*dph*np;
+    let riskinfo=getHRNandRisk(hrn);
+    y+=2.6;
+    doc.setFont("helvetica","bold");doc.setTextColor(riskinfo.color);
+    doc.setFontSize(13);
+    doc.text(`HRN (Hazard Rating Number): ${hrn.toFixed(2)} [${riskinfo.label}]`,19,y);
+    y+=8.5;
+    // Control Measures
+    let cm=document.getElementById(`control-measures-${i}`).value.trim();
+    if(cm){
+      doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor('#1374c3');
+      doc.text("Control Measures:",18,y); y+=5;
+      doc.setFont("helvetica","normal");doc.setFontSize(11);doc.setTextColor('#000');
+      let lines=doc.splitTextToSize(cm,160); doc.text(lines,21,y); y+=lines.length*5.4+1.2;
+    }
+    let imgY=y;
+    y=await addImageToPDF(doc,document.getElementById(`before-photo-${i}`),18,imgY,32,21,"Before Photo:");
+    y2=await addImageToPDF(doc,document.getElementById(`after-photo-${i}`),62,imgY,32,21,"After Photo:");
+    y=Math.max(y,y2);
+    y+=6;
+    // Risk Assessment After Controlled Measure
+    doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor('#1374c3');
+    doc.text("Risk Assessment After Controlled Measure",15,y); y+=6;
+    pdfRow('Probability of Exposure (PE):',document.getElementById(`pe-after-${i}`).selectedOptions[0].text);
+    pdfRow('Frequency of Exposure (FE):',document.getElementById(`fe-after-${i}`).selectedOptions[0].text);
+    pdfRow('Degree of Possible Harm (DPH):',document.getElementById(`dph-after-${i}`).selectedOptions[0].text);
+    pdfRow('No. of Persons at Risk (NP):',document.getElementById(`np-after-${i}`).selectedOptions[0].text);
+    let pe2=+document.getElementById(`pe-after-${i}`).value,
+      fe2=+document.getElementById(`fe-after-${i}`).value,
+      dph2=+document.getElementById(`dph-after-${i}`).value,
+      np2=+document.getElementById(`np-after-${i}`).value,
+      hrn2=pe2*fe2*dph2*np2;
+    let risk2=getHRNandRisk(hrn2);
+    y+=2.6;
+    doc.setFont("helvetica","bold");doc.setTextColor(risk2.color);doc.setFontSize(13);
+    doc.text(`HRN (Hazard Rating Number): ${hrn2.toFixed(2)} [${risk2.label}]`,19,y);
+    y+=8.5;
+    // Normative basics panel for this hazard
+    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor('#1374c3');
+    doc.text("Normative Basics and PLr Determination",15,y);y+=6;
+    doc.setFontSize(11);
+    doc.text("Normative basics:",18,y); doc.setFont("helvetica","normal");doc.setTextColor('#111');
+    let normdesc=document.getElementById(`norm-desc-${i}`).value.trim()||"(not specified)";
+    doc.text(doc.splitTextToSize(normdesc,138), 54, y); y+=6;
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor('#1374c3');
+    doc.text("SRP/CS:",18,y); doc.setFont("helvetica","normal");doc.setTextColor('#111');
+    let sprdesc=document.getElementById(`sprcs-desc-${i}`).value.trim()||"(not specified)";
+    doc.text(doc.splitTextToSize(sprdesc,138), 54, y); y+=6;
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor('#1374c3');
+    doc.text("Severity of the injury (S):",18,y); doc.setFont("helvetica","normal");doc.setTextColor('#111');
+    doc.text(document.getElementById(`dropdown-s-${i}`).selectedOptions[0].text, 74, y); y+=5;
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor('#1374c3');
+    doc.text("Frequency/duration of exposure to danger (F):",18,y); doc.setFont("helvetica","normal");doc.setTextColor('#111');
+    doc.text(document.getElementById(`dropdown-f-${i}`).selectedOptions[0].text, 100, y); y+=5;
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor('#1374c3');
+    doc.text("Possibility of preventing danger or limiting the damage (P):",18,y); doc.setFont("helvetica","normal");doc.setTextColor('#111');
+    doc.text(document.getElementById(`dropdown-p-${i}`).selectedOptions[0].text, 122, y); y+=5;
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor('#1374c3');
+    doc.text("Required performance level PL (PLr):",18,y); doc.setFont("helvetica","normal");doc.setTextColor('#111');
+    doc.text(document.getElementById(`dropdown-plr-${i}`).selectedOptions[0].text, 83, y); y+=8;
+    if(y>245 && i!=totalHazards){doc.addPage();y=18;}
+  }
+  doc.save('Robot_Cell_Risk_Assessment.pdf');
+});
+</script>
+</body>
+</html>
